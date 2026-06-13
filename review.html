@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ course.name }} · CS Course Survivors</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --bg:#0A0F1E; --panel:#0D1424;
+      --border:rgba(255,255,255,0.08);
+      --indigo:#6366F1; --indigo2:#818CF8;
+      --emerald:#10B981; --amber:#F59E0B; --rose:#F43F5E; --cyan:#06B6D4;
+      --text:#F1F5F9; --muted:#94A3B8; --dim:#475569;
+      --sidebar:260px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; }
+
+    /* SIDEBAR */
+    .sidebar { width:var(--sidebar); min-height:100vh; background:var(--panel); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:1.5rem 1rem; position:fixed; top:0; left:0; bottom:0; z-index:100; }
+    .sidebar-brand { display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.75rem 1.75rem; border-bottom:1px solid var(--border); margin-bottom:1.5rem; }
+    .sidebar-brand .icon { font-size:1.5rem; }
+    .sidebar-brand .name { font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700; background:linear-gradient(135deg,var(--indigo2),var(--emerald)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .sidebar-brand .tag { font-size:0.65rem; color:var(--dim); }
+    .nav-section { font-size:0.65rem; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:1px; padding:0 0.75rem; margin-bottom:0.5rem; }
+    .nav-link { display:flex; align-items:center; gap:0.65rem; padding:0.6rem 0.75rem; border-radius:10px; color:var(--muted); font-size:0.875rem; font-weight:500; text-decoration:none; transition:all 0.15s; margin-bottom:0.15rem; }
+    .nav-link:hover { background:rgba(255,255,255,0.06); color:var(--text); }
+    .nav-link.active { background:rgba(99,102,241,0.15); color:var(--indigo2); }
+    .nav-link .ni { font-size:1rem; width:20px; text-align:center; }
+    .sidebar-footer { margin-top:auto; padding-top:1.5rem; border-top:1px solid var(--border); }
+    .user-chip { display:flex; align-items:center; gap:0.6rem; padding:0.6rem 0.75rem; border-radius:10px; background:rgba(255,255,255,0.04); }
+    .user-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--indigo),var(--emerald)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; flex-shrink:0; }
+    .user-name { font-size:0.8rem; font-weight:600; }
+    .user-pts { font-size:0.7rem; color:var(--amber); }
+    .logout-btn { display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.75rem; border-radius:8px; color:var(--dim); font-size:0.8rem; text-decoration:none; margin-top:0.5rem; transition:all 0.15s; }
+    .logout-btn:hover { background:rgba(244,63,94,0.1); color:var(--rose); }
+
+    /* MAIN */
+    .main { margin-left:var(--sidebar); flex:1; padding:2rem 2.5rem; }
+
+    /* Alerts */
+    .alert { padding:0.75rem 1rem; border-radius:10px; font-size:0.875rem; margin-bottom:1rem; border:1px solid; }
+    .alert-danger  { background:rgba(244,63,94,0.1);  border-color:rgba(244,63,94,0.3);  color:#FDA4AF; }
+    .alert-warning { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:#FCD34D; }
+    .alert-success { background:rgba(16,185,129,0.1); border-color:rgba(16,185,129,0.3); color:#6EE7B7; }
+
+    /* Course header */
+    .course-header {
+      background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:16px;
+      padding:1.5rem 1.75rem; margin-bottom:2rem;
+      border-left:4px solid var(--accent-color, var(--indigo));
+    }
+    .ch-eyebrow { font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--accent-color, var(--indigo2)); margin-bottom:0.5rem; }
+    .ch-title { font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:800; letter-spacing:-0.3px; margin-bottom:0.5rem; }
+    .ch-meta { display:flex; gap:1.5rem; font-size:0.82rem; color:var(--muted); }
+
+    /* Layout grid */
+    .content-grid { display:grid; grid-template-columns:380px 1fr; gap:1.75rem; align-items:start; }
+
+    /* Form card */
+    .form-card { background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:16px; overflow:hidden; position:sticky; top:1.5rem; }
+    .form-head { padding:1.25rem 1.5rem; border-bottom:1px solid var(--border); }
+    .form-head h3 { font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700; }
+    .form-head p { font-size:0.8rem; color:var(--muted); margin-top:0.25rem; }
+    .pts-chip { display:inline-flex; align-items:center; gap:0.3rem; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.25); border-radius:999px; padding:0.2rem 0.65rem; font-size:0.75rem; font-weight:700; color:var(--amber); margin-top:0.5rem; }
+    .form-body { padding:1.25rem 1.5rem; }
+
+    .field { margin-bottom:1.25rem; }
+    .field-label { font-size:0.78rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:0.6rem; display:flex; justify-content:space-between; align-items:center; }
+    .range-val { font-size:1rem; font-weight:800; min-width:30px; text-align:right; }
+
+    input[type="range"] {
+      width:100%; -webkit-appearance:none; appearance:none;
+      height:5px; border-radius:3px;
+      background:rgba(255,255,255,0.1); outline:none; cursor:pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+      background:var(--indigo2); cursor:pointer; box-shadow:0 0 0 3px rgba(129,140,248,0.25);
+      transition:box-shadow 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover { box-shadow:0 0 0 5px rgba(129,140,248,0.3); }
+
+    .form-select, .form-textarea {
+      width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--border);
+      border-radius:10px; padding:0.65rem 1rem; color:var(--text);
+      font-family:'Inter',sans-serif; font-size:0.875rem; outline:none;
+      transition:border-color 0.2s; resize:vertical;
+    }
+    .form-select:focus, .form-textarea:focus { border-color:var(--indigo); }
+    .form-select option { background:#1e293b; }
+    .form-textarea::placeholder, .form-select { color:var(--muted); }
+
+    .already-done { padding:1rem 1.5rem; background:rgba(245,158,11,0.08); border-radius:10px; font-size:0.875rem; color:var(--amber); display:flex; align-items:center; gap:0.5rem; }
+
+    .submit-btn {
+      width:100%; padding:0.85rem; border:none; border-radius:12px;
+      background:linear-gradient(135deg,var(--indigo),var(--indigo2));
+      color:#fff; font-family:'Space Grotesk',sans-serif;
+      font-size:0.925rem; font-weight:700; cursor:pointer; letter-spacing:0.3px;
+      transition:opacity 0.15s, transform 0.15s; margin-top:0.5rem;
+    }
+    .submit-btn:hover { opacity:0.9; transform:translateY(-1px); }
+
+    /* Reviews list */
+    .reviews-header { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.25rem; }
+    .reviews-header h3 { font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:700; }
+    .count-badge { background:rgba(99,102,241,0.15); color:var(--indigo2); border-radius:999px; padding:0.25rem 0.75rem; font-size:0.78rem; font-weight:700; }
+
+    .review-card { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:14px; padding:1.25rem; margin-bottom:1rem; transition:border-color 0.15s; }
+    .review-card:hover { border-color:rgba(255,255,255,0.14); }
+
+    .reviewer-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+    .reviewer-info { display:flex; align-items:center; gap:0.65rem; }
+    .rev-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#6366F1,#A78BFA); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; flex-shrink:0; }
+    .rev-name { font-weight:600; font-size:0.85rem; }
+    .rev-date { font-size:0.72rem; color:var(--dim); }
+    .grade-pill { background:rgba(16,185,129,0.15); color:#34D399; border-radius:8px; padding:0.3rem 0.7rem; font-size:0.85rem; font-weight:800; }
+
+    .ratings-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0.5rem; margin-bottom:1rem; }
+    .rating-box { background:rgba(255,255,255,0.04); border-radius:10px; padding:0.6rem; text-align:center; }
+    .rating-val { font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:800; line-height:1; }
+    .rating-label { font-size:0.65rem; color:var(--dim); margin-top:0.2rem; text-transform:uppercase; letter-spacing:0.4px; }
+
+    .review-comment { font-size:0.85rem; color:var(--muted); line-height:1.6; margin-bottom:0.75rem; }
+    .tip-box { background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); border-radius:8px; padding:0.65rem 0.85rem; font-size:0.82rem; color:#FCD34D; }
+    .tip-box strong { color:var(--amber); }
+
+    .empty-reviews { text-align:center; padding:3rem 1.5rem; }
+    .empty-reviews .big { font-size:2.5rem; margin-bottom:0.75rem; }
+    .empty-reviews p { font-size:0.875rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+
+{% set cd = dept_colors.get(course.dept, ('primary','📦')) %}
+{% set accent_map = {
+  'primary':   '#6366F1',
+  'success':   '#10B981',
+  'warning':   '#F59E0B',
+  'danger':    '#F43F5E',
+  'info':      '#06B6D4',
+  'secondary': '#94A3B8',
+  'dark':      '#64748B'
+} %}
+{% set accent = accent_map.get(cd[0], '#6366F1') %}
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <span class="icon">🎓</span>
+    <div>
+      <div class="name">Course Survivors</div>
+      <div class="tag">BS CS · IBA SUKKUR</div>
+    </div>
+  </div>
+  <div class="nav-section">Navigation</div>
+  <a href="{{ url_for('dashboard') }}" class="nav-link"><span class="ni">🏠</span> Dashboard</a>
+  <a href="{{ url_for('leaderboard') }}" class="nav-link"><span class="ni">🏆</span> Leaderboard</a>
+  <div style="margin-top:1rem;" class="nav-section">Reviewing</div>
+  <div class="nav-link active"><span class="ni">📝</span> {{ course.code }}</div>
+  <div class="sidebar-footer">
+    <a href="{{ url_for('dashboard') }}" class="nav-link" style="margin-bottom:0.5rem;">← Back to Dashboard</a>
+    <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Sign out</a>
+  </div>
+</aside>
+
+<main class="main">
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+  <div class="alert alert-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+
+  <!-- Course header -->
+  <div class="course-header" style="--accent-color:{{ accent }};">
+    <div class="ch-eyebrow">{{ cd[1] }} {{ course.dept }}</div>
+    <div class="ch-title">{{ course.code }} — {{ course.name }}</div>
+    <div class="ch-meta">
+      <span>📅 Semester {{ course.semester }}</span>
+      <span>⏱ {{ course.credits }} Credit Hours</span>
+      <span>💬 {{ reviews|length }} Review{{ 's' if reviews|length != 1 }}</span>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <!-- Form -->
+    <div class="form-card">
+      <div class="form-head">
+        {% if existing %}
+        <h3>✅ Already Reviewed</h3>
+        <p>You can only submit one review per course.</p>
+        {% else %}
+        <h3>✍️ Write a Review</h3>
+        <p>Help fellow CS students survive this course.</p>
+        <div class="pts-chip">⭐ +50 points on submit</div>
+        {% endif %}
+      </div>
+      <div class="form-body">
+        {% if existing %}
+        <div class="already-done">✔ Your review has been recorded. Thanks for contributing!</div>
+        {% else %}
+        <form method="POST">
+          <div class="field">
+            <div class="field-label">Difficulty <span>(1 Easy → 10 Brutal)</span> <span class="range-val" id="dval" style="color:var(--rose);">5</span></div>
+            <input type="range" name="difficulty" min="1" max="10" value="5" oninput="document.getElementById('dval').textContent=this.value">
+          </div>
+          <div class="field">
+            <div class="field-label">Workload <span>(hrs/week)</span> <span class="range-val" id="wval" style="color:var(--amber);">5</span></div>
+            <input type="range" name="workload" min="1" max="10" value="5" oninput="document.getElementById('wval').textContent=this.value">
+          </div>
+          <div class="field">
+            <div class="field-label">Professor Rating <span class="range-val" id="pval" style="color:var(--cyan);">7</span></div>
+            <input type="range" name="professor_rating" min="1" max="10" value="7" oninput="document.getElementById('pval').textContent=this.value">
+          </div>
+          <div class="field">
+            <div class="field-label">Overall Rating ⭐ <span class="range-val" id="oval" style="color:var(--emerald);">7</span></div>
+            <input type="range" name="overall" min="1" max="10" value="7" oninput="document.getElementById('oval').textContent=this.value">
+          </div>
+          <div class="field">
+            <div class="field-label">Grade Received <span style="color:var(--dim);font-size:0.72rem;text-transform:none;letter-spacing:0;">(optional)</span></div>
+            <select name="grade_received" class="form-select">
+              <option value="">Prefer not to say</option>
+              {% for g in ['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','F'] %}
+              <option value="{{ g }}">{{ g }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <div class="field-label">Your Review</div>
+            <textarea name="comment" class="form-textarea" rows="3" placeholder="What was this course like? Important things to know?"></textarea>
+          </div>
+          <div class="field">
+            <div class="field-label">Survival Tips 💡</div>
+            <textarea name="tips" class="form-textarea" rows="2" placeholder="How can students do well in this course?"></textarea>
+          </div>
+          <button type="submit" class="submit-btn">Submit Review → +50 pts</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Reviews -->
+    <div>
+      <div class="reviews-header">
+        <h3>Student Reviews</h3>
+        <span class="count-badge">{{ reviews|length }}</span>
+      </div>
+
+      {% if reviews %}
+      {% for r in reviews %}
+      {% set dc = '#F43F5E' if r.difficulty >= 7 else ('#F59E0B' if r.difficulty >= 5 else '#10B981') %}
+      <div class="review-card">
+        <div class="reviewer-row">
+          <div class="reviewer-info">
+            <div class="rev-avatar">{{ r.reviewer_name[0].upper() }}</div>
+            <div>
+              <div class="rev-name">{{ r.reviewer_name }}</div>
+              <div class="rev-date">{{ r.created_at[:10] }}</div>
+            </div>
+          </div>
+          {% if r.grade_received %}
+          <div class="grade-pill">{{ r.grade_received }}</div>
+          {% endif %}
+        </div>
+
+        <div class="ratings-grid">
+          <div class="rating-box">
+            <div class="rating-val" style="color:#F43F5E;">{{ r.difficulty }}</div>
+            <div class="rating-label">Difficulty</div>
+          </div>
+          <div class="rating-box">
+            <div class="rating-val" style="color:#F59E0B;">{{ r.workload }}</div>
+            <div class="rating-label">Workload</div>
+          </div>
+          <div class="rating-box">
+            <div class="rating-val" style="color:#06B6D4;">{{ r.professor_rating }}</div>
+            <div class="rating-label">Professor</div>
+          </div>
+          <div class="rating-box">
+            <div class="rating-val" style="color:#10B981;">{{ r.overall }}</div>
+            <div class="rating-label">Overall</div>
+          </div>
+        </div>
+
+        {% if r.comment %}
+        <div class="review-comment">{{ r.comment }}</div>
+        {% endif %}
+        {% if r.tips %}
+        <div class="tip-box"><strong>💡 Tip:</strong> {{ r.tips }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      {% else %}
+      <div class="empty-reviews">
+        <div class="big">🌟</div>
+        <p>No reviews yet. Be the first to help your classmates!</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

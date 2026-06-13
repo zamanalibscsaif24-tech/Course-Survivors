@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard · CS Course Survivors</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --bg:#0A0F1E; --surface:#111827; --panel:#0D1424;
+      --border:rgba(255,255,255,0.08);
+      --indigo:#6366F1; --indigo2:#818CF8;
+      --emerald:#10B981; --amber:#F59E0B; --rose:#F43F5E;
+      --gold:#FFD700; --silver:#C0C0C0; --bronze:#CD7F32;
+      --text:#F1F5F9; --muted:#94A3B8; --dim:#475569;
+      --sidebar:260px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; }
+
+    /* SIDEBAR */
+    .sidebar { width:var(--sidebar); min-height:100vh; background:var(--panel); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:1.5rem 1rem; position:fixed; top:0; left:0; bottom:0; z-index:100; }
+    .sidebar-brand { display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.75rem 1.75rem; border-bottom:1px solid var(--border); margin-bottom:1.5rem; }
+    .sidebar-brand .icon { font-size:1.5rem; }
+    .sidebar-brand .name { font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700; background:linear-gradient(135deg,var(--indigo2),var(--emerald)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .sidebar-brand .tag { font-size:0.65rem; color:var(--dim); letter-spacing:0.5px; }
+    .nav-section { font-size:0.65rem; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:1px; padding:0 0.75rem; margin-bottom:0.5rem; }
+    .nav-link { display:flex; align-items:center; gap:0.65rem; padding:0.6rem 0.75rem; border-radius:10px; color:var(--muted); font-size:0.875rem; font-weight:500; text-decoration:none; transition:all 0.15s; margin-bottom:0.15rem; }
+    .nav-link:hover { background:rgba(255,255,255,0.06); color:var(--text); }
+    .nav-link.active { background:rgba(99,102,241,0.15); color:var(--indigo2); }
+    .nav-link .ni { font-size:1rem; width:20px; text-align:center; }
+    .sidebar-footer { margin-top:auto; padding-top:1.5rem; border-top:1px solid var(--border); }
+    .user-chip { display:flex; align-items:center; gap:0.6rem; padding:0.6rem 0.75rem; border-radius:10px; background:rgba(255,255,255,0.04); }
+    .user-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--indigo),var(--emerald)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; flex-shrink:0; }
+    .user-name { font-size:0.8rem; font-weight:600; }
+    .user-pts { font-size:0.7rem; color:var(--amber); }
+    .logout-btn { display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.75rem; border-radius:8px; color:var(--dim); font-size:0.8rem; text-decoration:none; margin-top:0.5rem; transition:all 0.15s; }
+    .logout-btn:hover { background:rgba(244,63,94,0.1); color:var(--rose); }
+
+    /* MAIN */
+    .main { margin-left:var(--sidebar); flex:1; padding:2rem 2.5rem; }
+
+    .page-title { font-family:'Space Grotesk',sans-serif; font-size:1.6rem; font-weight:800; letter-spacing:-0.5px; margin-bottom:0.25rem; }
+    .page-sub { font-size:0.85rem; color:var(--muted); margin-bottom:2rem; }
+
+    /* Podium */
+    .podium { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; max-width:680px; margin:0 auto 2.5rem; }
+    .podium-card {
+      border-radius:16px; padding:1.5rem 1rem; text-align:center;
+      border:1px solid var(--border); position:relative; overflow:hidden;
+    }
+    .podium-card.p1 { background:linear-gradient(160deg,rgba(255,215,0,0.12),rgba(255,165,0,0.06)); border-color:rgba(255,215,0,0.25); transform:scale(1.05); }
+    .podium-card.p2 { background:linear-gradient(160deg,rgba(192,192,192,0.1),rgba(168,168,168,0.05)); border-color:rgba(192,192,192,0.2); }
+    .podium-card.p3 { background:linear-gradient(160deg,rgba(205,127,50,0.1),rgba(160,82,45,0.05)); border-color:rgba(205,127,50,0.2); }
+    .podium-medal { font-size:2rem; margin-bottom:0.5rem; display:block; }
+    .podium-name { font-family:'Space Grotesk',sans-serif; font-size:0.95rem; font-weight:700; margin-bottom:0.25rem; }
+    .podium-pts { font-size:1.4rem; font-weight:800; }
+    .p1 .podium-pts { color:var(--gold); }
+    .p2 .podium-pts { color:var(--silver); }
+    .p3 .podium-pts { color:var(--bronze); }
+    .podium-reviews { font-size:0.75rem; color:var(--dim); margin-top:0.25rem; }
+
+    /* Table */
+    .table-card { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    thead th { padding:0.85rem 1.25rem; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--dim); border-bottom:1px solid var(--border); text-align:left; }
+    thead th:last-child { text-align:right; }
+    tbody tr { border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.12s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:rgba(255,255,255,0.03); }
+    tbody tr.me-row { background:rgba(245,158,11,0.06); }
+    td { padding:1rem 1.25rem; vertical-align:middle; }
+    td:last-child { text-align:right; }
+
+    .rank-num { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.875rem; }
+    .rank-1 { background:rgba(255,215,0,0.15); color:var(--gold); }
+    .rank-2 { background:rgba(192,192,192,0.12); color:var(--silver); }
+    .rank-3 { background:rgba(205,127,50,0.12); color:var(--bronze); }
+    .rank-n { background:rgba(255,255,255,0.05); color:var(--muted); }
+
+    .row-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--indigo),#A78BFA); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.9rem; flex-shrink:0; }
+    .row-name { font-weight:600; font-size:0.875rem; }
+    .row-email { font-size:0.75rem; color:var(--dim); }
+    .you-badge { font-size:0.65rem; font-weight:700; background:rgba(245,158,11,0.2); color:var(--amber); border-radius:999px; padding:0.15rem 0.5rem; vertical-align:middle; margin-left:0.4rem; }
+    .review-badge { background:rgba(99,102,241,0.15); color:var(--indigo2); border-radius:999px; padding:0.25rem 0.75rem; font-size:0.78rem; font-weight:600; }
+    .pts-val { font-family:'Space Grotesk',sans-serif; font-size:0.95rem; font-weight:700; color:var(--amber); }
+
+    .info-note { text-align:center; font-size:0.8rem; color:var(--dim); margin-top:1.25rem; }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <span class="icon">🎓</span>
+    <div>
+      <div class="name">Course Survivors</div>
+      <div class="tag">BS CS · IBA SUKKUR</div>
+    </div>
+  </div>
+  <div class="nav-section">Navigation</div>
+  <a href="{{ url_for('dashboard') }}" class="nav-link"><span class="ni">🏠</span> Dashboard</a>
+  <a href="{{ url_for('leaderboard') }}" class="nav-link active"><span class="ni">🏆</span> Leaderboard</a>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="user-avatar">{{ me.name[0].upper() }}</div>
+      <div>
+        <div class="user-name">{{ me.name.split()[0] }}</div>
+        <div class="user-pts">⭐ {{ me.points }} pts</div>
+      </div>
+    </div>
+    <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Sign out</a>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="page-title">🏆 Leaderboard</div>
+  <div class="page-sub">Top CS contributors at IBA Sukkur — ranked by points earned.</div>
+
+  {% if users|length >= 3 %}
+  <div class="podium">
+    <!-- Silver (2nd) -->
+    <div class="podium-card p2" style="align-self:flex-end;">
+      <span class="podium-medal">🥈</span>
+      <div class="podium-name">{{ users[1].name.split()[0] }}</div>
+      <div class="podium-pts">{{ users[1].points }}</div>
+      <div class="podium-reviews">{{ users[1].review_count }} review{{ 's' if users[1].review_count != 1 }}</div>
+    </div>
+    <!-- Gold (1st) -->
+    <div class="podium-card p1">
+      <span class="podium-medal">🥇</span>
+      <div class="podium-name">{{ users[0].name.split()[0] }}</div>
+      <div class="podium-pts">{{ users[0].points }}</div>
+      <div class="podium-reviews">{{ users[0].review_count }} review{{ 's' if users[0].review_count != 1 }}</div>
+    </div>
+    <!-- Bronze (3rd) -->
+    <div class="podium-card p3" style="align-self:flex-end;">
+      <span class="podium-medal">🥉</span>
+      <div class="podium-name">{{ users[2].name.split()[0] }}</div>
+      <div class="podium-pts">{{ users[2].points }}</div>
+      <div class="podium-reviews">{{ users[2].review_count }} review{{ 's' if users[2].review_count != 1 }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Student</th>
+          <th>Reviews</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr {% if u.id == me.id %}class="me-row"{% endif %}>
+          <td>
+            <div class="rank-num rank-{% if loop.index <= 3 %}{{ loop.index }}{% else %}n{% endif %}">
+              {{ loop.index }}
+            </div>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <div class="row-avatar">{{ u.name[0].upper() }}</div>
+              <div>
+                <div class="row-name">
+                  {{ u.name }}
+                  {% if u.id == me.id %}<span class="you-badge">You</span>{% endif %}
+                </div>
+                <div class="row-email">{{ u.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="review-badge">{{ u.review_count }}</span></td>
+          <td><span class="pts-val">{{ u.points }} ⭐</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="info-note">ℹ️ Earn 50 points for every course review you submit.</div>
+</main>
+
+</body>
+</html>

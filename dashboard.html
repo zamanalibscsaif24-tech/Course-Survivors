@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard · CS Course Survivors</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0A0F1E; --surface: #111827; --panel: #0D1424;
+      --card: rgba(255,255,255,0.04); --border: rgba(255,255,255,0.08);
+      --indigo: #6366F1; --indigo2: #818CF8;
+      --emerald: #10B981; --amber: #F59E0B; --rose: #F43F5E; --cyan: #06B6D4;
+      --text: #F1F5F9; --muted: #94A3B8; --dim: #475569;
+      --sidebar: 260px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: var(--sidebar);
+      min-height: 100vh;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 1rem;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+    }
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.5rem 0.75rem 1.75rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+    .sidebar-brand .icon { font-size: 1.5rem; }
+    .sidebar-brand .name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--indigo2), var(--emerald));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .sidebar-brand .tag { font-size: 0.65rem; color: var(--dim); letter-spacing: 0.5px; }
+
+    .nav-section { font-size: 0.65rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; padding: 0 0.75rem; margin-bottom: 0.5rem; }
+    .nav-link {
+      display: flex; align-items: center; gap: 0.65rem;
+      padding: 0.6rem 0.75rem; border-radius: 10px;
+      color: var(--muted); font-size: 0.875rem; font-weight: 500;
+      text-decoration: none; transition: all 0.15s; margin-bottom: 0.15rem;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .nav-link.active { background: rgba(99,102,241,0.15); color: var(--indigo2); }
+    .nav-link .ni { font-size: 1rem; width: 20px; text-align: center; }
+
+    .sidebar-footer { margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+    .user-chip {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.6rem 0.75rem; border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+    }
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--indigo), var(--emerald));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+    }
+    .user-name { font-size: 0.8rem; font-weight: 600; line-height: 1.2; }
+    .user-pts { font-size: 0.7rem; color: var(--amber); }
+    .logout-btn {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.5rem 0.75rem; border-radius: 8px;
+      color: var(--dim); font-size: 0.8rem; text-decoration: none;
+      margin-top: 0.5rem; transition: all 0.15s;
+    }
+    .logout-btn:hover { background: rgba(244,63,94,0.1); color: var(--rose); }
+
+    /* MAIN */
+    .main { margin-left: var(--sidebar); flex: 1; padding: 2rem 2.5rem; min-height: 100vh; }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+    .page-title { font-family:'Space Grotesk',sans-serif; font-size:1.6rem; font-weight:800; letter-spacing:-0.5px; }
+    .page-title span { color: var(--indigo2); }
+
+    .pts-pill {
+      display: flex; align-items: center; gap: 0.4rem;
+      background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 999px; padding: 0.4rem 1rem;
+      font-size: 0.875rem; font-weight: 600; color: var(--amber);
+    }
+
+    /* Alerts */
+    .alert { padding:0.75rem 1rem; border-radius:10px; font-size:0.875rem; margin-bottom:1rem; border:1px solid; }
+    .alert-danger  { background:rgba(244,63,94,0.1);  border-color:rgba(244,63,94,0.3);  color:#FDA4AF; }
+    .alert-warning { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:#FCD34D; }
+    .alert-success { background:rgba(16,185,129,0.1); border-color:rgba(16,185,129,0.3); color:#6EE7B7; }
+
+    /* Filter bar */
+    .filter-bar {
+      display: flex; gap: 0.75rem; align-items: center;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 14px; padding: 0.85rem 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+    }
+    .search-wrap { position:relative; flex:1; min-width:200px; }
+    .search-wrap input {
+      width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--border);
+      border-radius:10px; padding:0.6rem 1rem 0.6rem 2.5rem;
+      color:var(--text); font-family:'Inter',sans-serif; font-size:0.875rem; outline:none;
+      transition:border-color 0.2s;
+    }
+    .search-wrap input:focus { border-color:var(--indigo); }
+    .search-wrap input::placeholder { color:var(--dim); }
+    .search-icon { position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--dim); font-size:0.9rem; }
+    .filter-select {
+      background:rgba(255,255,255,0.06); border:1px solid var(--border);
+      border-radius:10px; padding:0.6rem 1rem; color:var(--text);
+      font-family:'Inter',sans-serif; font-size:0.875rem; outline:none; cursor:pointer;
+      transition: border-color 0.2s;
+    }
+    .filter-select:focus { border-color:var(--indigo); }
+    .filter-select option { background:#1e293b; }
+    .clear-btn {
+      background:transparent; border:1px solid var(--border); border-radius:10px;
+      color:var(--muted); padding:0.6rem 0.85rem; cursor:pointer; font-size:0.85rem;
+      text-decoration:none; transition:all 0.15s; display:flex; align-items:center;
+    }
+    .clear-btn:hover { border-color:var(--rose); color:var(--rose); }
+
+    .result-count { font-size:0.82rem; color:var(--muted); margin-bottom:1.25rem; }
+    .result-count strong { color:var(--text); }
+
+    /* Course grid */
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:1.25rem; }
+
+    .course-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      display: flex; flex-direction: column;
+      position: relative; overflow: hidden;
+    }
+    .course-card::before {
+      content:'';
+      position:absolute; left:0; top:0; bottom:0; width:3px;
+      border-radius:3px 0 0 3px;
+      background: var(--card-accent, var(--indigo));
+    }
+    .course-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    .card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem; }
+    .dept-badge {
+      font-size:0.7rem; font-weight:700; letter-spacing:0.6px; text-transform:uppercase;
+      padding:0.3rem 0.65rem; border-radius:6px;
+      background:var(--badge-bg, rgba(99,102,241,0.15));
+      color:var(--badge-color, var(--indigo2));
+      display:flex; align-items:center; gap:0.3rem;
+    }
+    .sem-tag { font-size:0.75rem; color:var(--dim); font-weight:500; }
+
+    .course-code { font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:0.2rem; }
+    .course-name { font-size:0.85rem; color:var(--muted); margin-bottom:1rem; line-height:1.4; }
+
+    .meta-row { display:flex; gap:1rem; font-size:0.78rem; color:var(--dim); margin-bottom:1rem; }
+    .meta-item { display:flex; align-items:center; gap:0.3rem; }
+
+    .stat-block { margin-bottom:0.65rem; }
+    .stat-label-row { display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.3rem; }
+    .stat-label { color:var(--muted); }
+    .stat-val { font-weight:700; }
+    .bar-track { height:4px; border-radius:2px; background:rgba(255,255,255,0.08); }
+    .bar-fill  { height:4px; border-radius:2px; transition:width 0.6s ease; }
+
+    .no-reviews { font-size:0.8rem; color:var(--dim); font-style:italic; margin-bottom:1rem; }
+
+    .card-btn {
+      margin-top:auto; padding:0.65rem 1rem; border-radius:10px; border:none;
+      font-family:'Inter',sans-serif; font-size:0.825rem; font-weight:600; cursor:pointer;
+      text-decoration:none; display:flex; align-items:center; justify-content:center; gap:0.4rem;
+      transition:opacity 0.15s, transform 0.15s;
+      background: var(--btn-bg, rgba(99,102,241,0.2));
+      color: var(--btn-color, var(--indigo2));
+      border: 1px solid var(--btn-border, rgba(99,102,241,0.3));
+    }
+    .card-btn:hover { opacity:0.85; transform:translateY(-1px); }
+
+    /* Empty state */
+    .empty { text-align:center; padding:4rem 2rem; color:var(--muted); }
+    .empty .big { font-size:3rem; margin-bottom:1rem; }
+    .empty h4 { font-family:'Space Grotesk',sans-serif; color:var(--text); margin-bottom:0.5rem; }
+    .empty p { font-size:0.875rem; margin-bottom:1.5rem; }
+    .empty a { background:var(--indigo); color:#fff; padding:0.65rem 1.5rem; border-radius:10px; text-decoration:none; font-size:0.875rem; font-weight:600; }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <span class="icon">🎓</span>
+    <div>
+      <div class="name">Course Survivors</div>
+      <div class="tag">BS CS · IBA SUKKUR</div>
+    </div>
+  </div>
+
+  <div class="nav-section">Navigation</div>
+  <a href="{{ url_for('dashboard') }}" class="nav-link active">
+    <span class="ni">🏠</span> Dashboard
+  </a>
+  <a href="{{ url_for('leaderboard') }}" class="nav-link">
+    <span class="ni">🏆</span> Leaderboard
+  </a>
+
+  <div style="margin-top:1.5rem; margin-bottom:0.5rem;" class="nav-section">Semesters</div>
+  {% for s in semesters %}
+  <a href="{{ url_for('dashboard', sem=s) }}" class="nav-link {% if sem_f == s|string %}active{% endif %}">
+    <span class="ni">📘</span> Semester {{ s }}
+  </a>
+  {% endfor %}
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="user-avatar">{{ user.name[0].upper() }}</div>
+      <div>
+        <div class="user-name">{{ user.name.split()[0] }}</div>
+        <div class="user-pts">⭐ {{ user.points }} pts</div>
+      </div>
+    </div>
+    <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Sign out</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Hello, <span>{{ user.name.split()[0] }}</span> 👋</div>
+      <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">Browse BS CS courses, read reviews, survive the semester.</div>
+    </div>
+    <div class="pts-pill">⭐ {{ user.points }} points</div>
+  </div>
+
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+  <div class="alert alert-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+
+  <!-- Filter bar -->
+  <form method="GET" action="{{ url_for('dashboard') }}" id="ff">
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" name="q" placeholder="Search courses..." value="{{ search }}" oninput="document.getElementById('ff').submit()">
+      </div>
+      <select name="dept" class="filter-select" onchange="this.form.submit()" title="Filter by course category within the BS CS curriculum">
+        <option value="All" {% if dept_f=='All' %}selected{% endif %}>All Course Categories</option>
+        {% for d in depts %}
+        <option value="{{ d }}" {% if dept_f==d %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
+      <select name="sem" class="filter-select" onchange="this.form.submit()">
+        <option value="All" {% if sem_f=='All' %}selected{% endif %}>All Semesters</option>
+        {% for s in semesters %}
+        <option value="{{ s }}" {% if sem_f==s|string %}selected{% endif %}>Semester {{ s }}</option>
+        {% endfor %}
+      </select>
+      <a href="{{ url_for('dashboard') }}" class="clear-btn" title="Clear filters">✕</a>
+    </div>
+  </form>
+
+  <div style="font-size:0.76rem;color:var(--dim);margin-bottom:0.85rem;margin-top:-0.5rem;">
+    💡 <em>Course categories reflect curriculum structure of BS CS at IBA Sukkur — not separate departments.</em>
+  </div>
+  <div class="result-count">
+    Showing <strong>{{ courses|length }}</strong> course{{ 's' if courses|length != 1 }}
+    {% if search %} for "<strong>{{ search }}</strong>"{% endif %}
+    {% if dept_f != 'All' %} · category <strong>{{ dept_f }}</strong>{% endif %}
+    {% if sem_f != 'All' %} · Semester <strong>{{ sem_f }}</strong>{% endif %}
+  </div>
+
+  {% if courses %}
+  <div class="grid">
+    {% for course in courses %}
+    {% set cd = dept_colors.get(course.dept, ('primary','📦')) %}
+    {% set stat = stats.get(course.code, {}) %}
+
+    {# Map colour names to CSS vars #}
+    {% set accent_map = {
+      'primary':   ('#6366F1','rgba(99,102,241,0.15)','#818CF8','rgba(99,102,241,0.2)','rgba(99,102,241,0.35)'),
+      'success':   ('#10B981','rgba(16,185,129,0.12)','#34D399','rgba(16,185,129,0.15)','rgba(16,185,129,0.35)'),
+      'warning':   ('#F59E0B','rgba(245,158,11,0.12)','#FBBF24','rgba(245,158,11,0.15)','rgba(245,158,11,0.35)'),
+      'danger':    ('#F43F5E','rgba(244,63,94,0.12)','#FB7185','rgba(244,63,94,0.15)','rgba(244,63,94,0.35)'),
+      'info':      ('#06B6D4','rgba(6,182,212,0.12)','#22D3EE','rgba(6,182,212,0.15)','rgba(6,182,212,0.35)'),
+      'secondary': ('#94A3B8','rgba(148,163,184,0.12)','#CBD5E1','rgba(148,163,184,0.15)','rgba(148,163,184,0.35)'),
+      'dark':      ('#64748B','rgba(100,116,139,0.12)','#94A3B8','rgba(100,116,139,0.15)','rgba(100,116,139,0.35)')
+    } %}
+    {% set am = accent_map.get(cd[0], accent_map['primary']) %}
+
+    <div class="course-card" style="--card-accent:{{ am[0] }};--badge-bg:{{ am[1] }};--badge-color:{{ am[2] }};--btn-bg:{{ am[3] }};--btn-color:{{ am[2] }};--btn-border:{{ am[4] }};">
+      <div class="card-top">
+        <div class="dept-badge">{{ cd[1] }} {{ course.dept }}</div>
+        <span class="sem-tag">Sem {{ course.semester }}</span>
+      </div>
+      <div class="course-code">{{ course.code }}</div>
+      <div class="course-name">{{ course.name }}</div>
+      <div class="meta-row">
+        <span class="meta-item">⏱ {{ course.credits }} cr hrs</span>
+        {% if stat.get('review_count') %}
+        <span class="meta-item">💬 {{ stat.review_count }} review{{ 's' if stat.review_count != 1 }}</span>
+        {% endif %}
+      </div>
+
+      {% if stat.get('avg_overall') %}
+      <div class="stat-block">
+        <div class="stat-label-row">
+          <span class="stat-label">Overall Rating</span>
+          <span class="stat-val" style="color:{{ am[2] }};">{{ stat.avg_overall }}/10</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:{{ (stat.avg_overall/10*100)|int }}%;background:{{ am[0] }};"></div></div>
+      </div>
+      {% if stat.get('avg_difficulty') %}
+      {% set dc = '#F43F5E' if stat.avg_difficulty >= 7 else ('#F59E0B' if stat.avg_difficulty >= 5 else '#10B981') %}
+      <div class="stat-block">
+        <div class="stat-label-row">
+          <span class="stat-label">Difficulty</span>
+          <span class="stat-val" style="color:{{ dc }};">{{ stat.avg_difficulty }}/10</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:{{ (stat.avg_difficulty/10*100)|int }}%;background:{{ dc }};"></div></div>
+      </div>
+      {% endif %}
+      {% else %}
+      <div class="no-reviews">No reviews yet — be the first!</div>
+      {% endif %}
+
+      <a href="{{ url_for('review', course_code=course.code) }}" class="card-btn">
+        {% if stat.get('review_count') %}👁 View Reviews{% else %}✍️ Write First Review{% endif %}
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty">
+    <div class="big">🔍</div>
+    <h4>No courses found</h4>
+    <p>Try adjusting your search or filters.</p>
+    <a href="{{ url_for('dashboard') }}">Clear Filters</a>
+  </div>
+  {% endif %}
+</main>
+
+</body>
+</html>
