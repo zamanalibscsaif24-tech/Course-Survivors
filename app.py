@@ -7,7 +7,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'course_survivors_iba_2024'
-DB_PATH = '/var/data/course_survivors.db'
+DB_PATH = 'course_survivors.db'
 
 # ─── All courses from the BS AI curriculum PDF ───────────────────────────────
 COURSES = [
